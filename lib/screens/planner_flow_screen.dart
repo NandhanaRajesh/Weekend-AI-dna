@@ -4,6 +4,7 @@ import '../widgets/animated_background.dart';
 import '../widgets/kai_mascot.dart';
 import '../widgets/kai_bubble.dart';
 import '../widgets/mood_tiles.dart';
+import '../widgets/friends_step.dart';
 import 'home_screen.dart';
 
 /// 9-Step Weekend Planning Flow Screen featuring PageView deck transitions,
@@ -170,11 +171,20 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
                       ),
 
                       // Step 2: Squad & Friends
-                      _buildSimpleStepCard(
-                        title: 'Who\'s joining your adventure?',
-                        options: const ['Solo Quest 🧍', 'Duo Date 💑', 'Squad (3-4) 🥳', 'Big Family 👨‍👩‍👧‍👦'],
-                        selectedValue: _selectedSquad,
-                        onSelect: (val) => setState(() => _selectedSquad = val),
+                      _buildStepContainer(
+                        child: SingleChildScrollView(
+                          child: FriendsStep(
+                            selectedMode: _selectedSquad == 'friends' ? 'friends' : 'solo',
+                            onModeChanged: (mode) {
+                              setState(() {
+                                _selectedSquad = mode;
+                                _kaiSpeechText = mode == 'friends'
+                                    ? "Chaos squad assemble! 👯 Let's see who's tagging along."
+                                    : "Flying solo! Time for some quality Me-Time 🧍";
+                              });
+                            },
+                          ),
+                        ),
                       ),
 
                       // Step 3: Budget

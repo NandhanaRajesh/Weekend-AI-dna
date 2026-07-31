@@ -4,7 +4,7 @@ import '../widgets/floating_icons.dart';
 import '../widgets/logo_widget.dart';
 import '../widgets/kai_bubble.dart';
 import '../widgets/progress_line.dart';
-import 'onboarding_screen.dart';
+import 'onboarding_carousel_screen.dart';
 
 /// Premium Animated Splash Screen orchestrating all timeline staggered animations
 /// and smooth page transition to OnboardingScreen.
@@ -110,7 +110,7 @@ class _SplashScreenState extends State<SplashScreen>
         transitionDuration: const Duration(milliseconds: 900),
         reverseTransitionDuration: const Duration(milliseconds: 600),
         pageBuilder: (context, animation, secondaryAnimation) {
-          return const OnboardingScreen();
+          return const OnboardingCarouselScreen();
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           // Smooth upward floating transition combined with cross-fade
