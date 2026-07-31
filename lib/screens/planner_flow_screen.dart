@@ -5,6 +5,12 @@ import '../widgets/kai_mascot.dart';
 import '../widgets/kai_bubble.dart';
 import '../widgets/mood_tiles.dart';
 import '../widgets/friends_step.dart';
+import '../widgets/budget_step.dart';
+import '../widgets/distance_step.dart';
+import '../widgets/transport_step.dart';
+import '../widgets/activities_step.dart';
+import '../widgets/food_step.dart';
+import '../widgets/weather_step.dart';
 import 'home_screen.dart';
 
 /// 9-Step Weekend Planning Flow Screen featuring PageView deck transitions,
@@ -188,51 +194,111 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
                       ),
 
                       // Step 3: Budget
-                      _buildSimpleStepCard(
-                        title: 'What\'s your budget vibe?',
-                        options: const ['Budget Friendly (\$)', 'Moderate (\$\$)', 'Luxury Splurge (\$\$\$)'],
-                        selectedValue: _selectedBudget,
-                        onSelect: (val) => setState(() => _selectedBudget = val),
+                      _buildStepContainer(
+                        child: SingleChildScrollView(
+                          child: BudgetStep(
+                            currentBudget: 1500,
+                            onBudgetChanged: (val) {
+                              setState(() {
+                                _selectedBudget = '₹${val.toInt()}';
+                              });
+                              debugPrint('Budget updated: $_selectedBudget');
+                            },
+                            onKaiReactionChanged: (reaction) {
+                              setState(() {
+                                _kaiSpeechText = reaction;
+                              });
+                            },
+                          ),
+                        ),
                       ),
 
                       // Step 4: Distance
-                      _buildSimpleStepCard(
-                        title: 'How far do you want to travel?',
-                        options: const ['Walkable (<5m)', 'Short Drive (15-30m)', 'Road Trip (1h+)'],
-                        selectedValue: _selectedDistance,
-                        onSelect: (val) => setState(() => _selectedDistance = val),
+                      _buildStepContainer(
+                        child: SingleChildScrollView(
+                          child: DistanceStep(
+                            currentDistance: 15,
+                            onDistanceChanged: (val) {
+                              setState(() {
+                                _selectedDistance = '${val.toInt()} km';
+                              });
+                              debugPrint('Distance updated: $_selectedDistance');
+                            },
+                            onKaiReactionChanged: (reaction) {
+                              setState(() {
+                                _kaiSpeechText = reaction;
+                              });
+                            },
+                          ),
+                        ),
                       ),
 
                       // Step 5: Transport
-                      _buildSimpleStepCard(
-                        title: 'Preferred mode of transport?',
-                        options: const ['Electric Scooter 🛴', 'Personal Car 🚗', 'Public Transit 🚌'],
-                        selectedValue: 'Personal Car 🚗',
-                        onSelect: (val) {},
+                      _buildStepContainer(
+                        child: SingleChildScrollView(
+                          child: TransportStep(
+                            selectedTransport: 'car',
+                            onTransportChanged: (val) {
+                              debugPrint('Transport selected: $val');
+                            },
+                            onKaiReactionChanged: (reaction) {
+                              setState(() {
+                                _kaiSpeechText = reaction;
+                              });
+                            },
+                          ),
+                        ),
                       ),
 
                       // Step 6: Activities
-                      _buildSimpleStepCard(
-                        title: 'Favorite activity types?',
-                        options: const ['Outdoors & Trails 🌲', 'Foodie & Drinks 🍕', 'Art & Museums 🎨', 'Nightlife & Dancing 💃'],
-                        selectedValue: 'Outdoors & Trails 🌲',
-                        onSelect: (val) {},
+                      _buildStepContainer(
+                        child: SingleChildScrollView(
+                          child: ActivitiesStep(
+                            selectedActivities: const {'creative', 'adventure', 'food'},
+                            onActivitiesChanged: (selected) {
+                              debugPrint('Activities selected: $selected');
+                            },
+                            onKaiReactionChanged: (reaction) {
+                              setState(() {
+                                _kaiSpeechText = reaction;
+                              });
+                            },
+                          ),
+                        ),
                       ),
 
                       // Step 7: Food Vibes
-                      _buildSimpleStepCard(
-                        title: 'What are you craving?',
-                        options: const ['Street Food 🌮', 'Cozy Cafe ☕', 'Rooftop Dining 🍷'],
-                        selectedValue: 'Cozy Cafe ☕',
-                        onSelect: (val) {},
+                      _buildStepContainer(
+                        child: SingleChildScrollView(
+                          child: FoodStep(
+                            selectedFoodId: 'cafe',
+                            selectedDietary: 'No Preference 😋',
+                            onFoodChanged: (val) {
+                              debugPrint('Food selected: $val');
+                            },
+                            onDietaryChanged: (diet) {
+                              debugPrint('Dietary selected: $diet');
+                            },
+                            onKaiReactionChanged: (reaction) {
+                              setState(() {
+                                _kaiSpeechText = reaction;
+                              });
+                            },
+                          ),
+                        ),
                       ),
 
                       // Step 8: Weather (Auto-skipped preview)
-                      _buildSimpleStepCard(
-                        title: 'Weather Check',
-                        options: const ['72°F & Sunny ☀️ (Auto-Checked)'],
-                        selectedValue: '72°F & Sunny ☀️ (Auto-Checked)',
-                        onSelect: (val) {},
+                      _buildStepContainer(
+                        child: WeatherStep(
+                          onAutoAdvance: () {
+                            _pageController.animateToPage(
+                              8,
+                              duration: const Duration(milliseconds: 600),
+                              curve: Curves.easeInOutCubic,
+                            );
+                          },
+                        ),
                       ),
 
                       // Step 9: AI Generation
@@ -336,73 +402,7 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
     );
   }
 
-  Widget _buildSimpleStepCard({
-    required String title,
-    required List<String> options,
-    required String selectedValue,
-    required ValueChanged<String> onSelect,
-  }) {
-    return _buildStepContainer(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(26),
-          color: Colors.white.withValues(alpha: 0.08),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ...options.map((opt) {
-              final isSel = selectedValue == opt;
-              return GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  onSelect(opt);
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    color: isSel ? const Color(0xFFFF7A59).withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.05),
-                    border: Border.all(
-                      color: isSel ? const Color(0xFFFF7A59) : Colors.white.withValues(alpha: 0.15),
-                      width: isSel ? 2 : 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        opt,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                      if (isSel)
-                        const Icon(Icons.check_circle_rounded, color: Color(0xFFFF7A59)),
-                    ],
-                  ),
-                ),
-              );
-            }),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildAIGenerationStep() {
     return _buildStepContainer(
