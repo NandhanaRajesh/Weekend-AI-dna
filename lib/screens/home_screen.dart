@@ -5,6 +5,7 @@ import '../widgets/kai_bubble.dart';
 import '../widgets/recommendation_cards.dart';
 import '../widgets/hidden_gems.dart';
 import '../widgets/bottom_nav_bar.dart';
+import 'planner_flow_screen.dart';
 
 /// Full interactive HomeScreen implementation with reactive Kai AI mascot,
 /// goofy speech reactions, tilted drag cards, and hidden gems.
@@ -70,7 +71,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 BottomNavBar(
                   selectedIndex: _currentTab,
                   onTabSelected: (index) {
-                    setState(() => _currentTab = index);
+                    if (index == 1) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const PlannerFlowScreen()),
+                      );
+                    } else {
+                      setState(() => _currentTab = index);
+                    }
                   },
                 ),
               ],
