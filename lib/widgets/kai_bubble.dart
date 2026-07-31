@@ -2,14 +2,15 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
-/// Kai AI Speech Bubble Widget that slides up from the bottom at 1.8s
-/// with a gentle bounce and frosted glass card design.
+/// Kai Speech Bubble displaying playful, reactive speech text from Kai's copy bank.
 class KaiBubble extends StatefulWidget {
-  final Animation<double> entranceAnimation;
+  final String text;
+  final Animation<double>? entranceAnimation;
 
   const KaiBubble({
     super.key,
-    required this.entranceAnimation,
+    required this.text,
+    this.entranceAnimation,
   });
 
   @override
@@ -23,10 +24,9 @@ class _KaiBubbleState extends State<KaiBubble>
   @override
   void initState() {
     super.initState();
-    // Micro-bounce controller for gentle floating motion
     _bounceController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2400),
+      duration: const Duration(milliseconds: 2200),
     )..repeat(reverse: true);
   }
 
@@ -39,146 +39,93 @@ class _KaiBubbleState extends State<KaiBubble>
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([widget.entranceAnimation, _bounceController]),
+      animation: _bounceController,
       builder: (context, child) {
-        final progress = widget.entranceAnimation.value;
-        if (progress <= 0.0) return const SizedBox.shrink();
+        final floatOffset = math.sin(_bounceController.value * math.pi * 2) * 3.5;
 
-        // Slide up from 50px below with elastic spring ease
-        final slideY = (1.0 - progress) * 60.0;
-        
-        // Gentle micro bounce: ± 4 pixels
-        final floatOffset = math.sin(_bounceController.value * math.pi * 2) * 4.0;
+        final entranceProgress = widget.entranceAnimation?.value ?? 1.0;
+        if (entranceProgress <= 0.0) return const SizedBox.shrink();
+
+        final slideY = (1.0 - entranceProgress) * 40.0;
 
         return Transform.translate(
           offset: Offset(0, slideY + floatOffset),
           child: Opacity(
-            opacity: progress.clamp(0.0, 1.0),
+            opacity: entranceProgress.clamp(0.0, 1.0),
             child: child,
           ),
         );
       },
-      child: const _SpeechBubbleCard(),
-    );
-  }
-}
-
-class _SpeechBubbleCard extends StatelessWidget {
-  const _SpeechBubbleCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(22),
-          topRight: Radius.circular(22),
-          bottomRight: Radius.circular(22),
-          bottomLeft: Radius.circular(6), // Classic speech tail notch angle
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.18),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: const Color(0xFF6C63FF).withValues(alpha: 0.2),
-            blurRadius: 30,
-            spreadRadius: -4,
-          ),
-        ],
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.28),
-          width: 1.2,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Kai AI Avatar Badge
-              Container(
-                width: 38,
-                height: 38,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFFFF7A59),
-                      Color(0xFF8B5CF6),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.auto_awesome_rounded,
-                    size: 20,
-                    color: Colors.white,
-                  ),
-                ),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 350),
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.92, end: 1.0).animate(animation),
+              child: child,
+            ),
+          );
+        },
+        child: Container(
+          key: ValueKey<String>(widget.text),
+          margin: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E1B33).withValues(alpha: 0.88),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+              bottomRight: Radius.circular(20),
+              bottomLeft: Radius.circular(4),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFFF7A59).withValues(alpha: 0.25),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
               ),
-
-              const SizedBox(width: 14),
-
-              // Kai's Message
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Kai',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF2DD4BF),
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.white.withValues(alpha: 0.15),
-                          ),
-                          child: const Text(
-                            'AI Assistant',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ),
-                      ],
+            ],
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.25),
+              width: 1.2,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFFFF7A59).withValues(alpha: 0.2),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '"Let\'s make this weekend unforgettable."',
+                    child: const Icon(
+                      Icons.auto_awesome_rounded,
+                      size: 16,
+                      color: Color(0xFFFF7A59),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      widget.text,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
+                        height: 1.25,
                         letterSpacing: -0.1,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

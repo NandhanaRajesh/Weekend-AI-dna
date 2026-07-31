@@ -191,7 +191,10 @@ class _SplashScreenState extends State<SplashScreen>
                       const Spacer(flex: 2),
 
                       // 1.8s: Kai AI Speech Bubble
-                      KaiBubble(entranceAnimation: _kaiBubbleAnimation),
+                      KaiBubble(
+                        text: "Let's make this weekend unforgettable.",
+                        entranceAnimation: _kaiBubbleAnimation,
+                      ),
 
                       const SizedBox(height: 16),
                     ],

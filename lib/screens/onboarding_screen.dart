@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/animated_background.dart';
+import 'home_screen.dart';
 
 /// Destination screen navigated to after the splash screen animation sequence completes.
 class OnboardingScreen extends StatefulWidget {
@@ -168,7 +169,17 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
                     // Get Started Primary Button
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.of(context).pushReplacement(
+                          PageRouteBuilder(
+                            transitionDuration: const Duration(milliseconds: 700),
+                            pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
+                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                              return FadeTransition(opacity: animation, child: child);
+                            },
+                          ),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         padding: EdgeInsets.zero,
