@@ -6,6 +6,7 @@ import '../widgets/recommendation_cards.dart';
 import '../widgets/hidden_gems.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'planner_flow_screen.dart';
+import 'group_voting_screen.dart';
 
 /// Full interactive HomeScreen implementation with reactive Kai AI mascot,
 /// goofy speech reactions, tilted drag cards, and hidden gems.
@@ -18,7 +19,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentTab = 0;
-  String _kaiSpeechText = "Ta-da! I stalked the weather for you 👀 here's your weekend, served hot.";
+  String _kaiSpeechText = "TA-DA. Three weekends, all designed by yours truly. Try not to cry 🪄";
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +75,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (index == 1) {
                       Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => const PlannerFlowScreen()),
+                      );
+                    } else if (index == 2) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const GroupVotingScreen()),
                       );
                     } else {
                       setState(() => _currentTab = index);

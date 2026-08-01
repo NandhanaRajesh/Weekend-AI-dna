@@ -11,7 +11,9 @@ import '../widgets/transport_step.dart';
 import '../widgets/activities_step.dart';
 import '../widgets/food_step.dart';
 import '../widgets/weather_step.dart';
+import '../widgets/ai_thinking_step.dart';
 import 'home_screen.dart';
+import 'final_itinerary_screen.dart';
 
 /// 9-Step Weekend Planning Flow Screen featuring PageView deck transitions,
 /// progress dots, Kai speech commentary, and interactive mood check tiles.
@@ -302,7 +304,15 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
                       ),
 
                       // Step 9: AI Generation
-                      _buildAIGenerationStep(),
+                      _buildStepContainer(
+                        child: AiThinkingStep(
+                          onComplete: () {
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(builder: (_) => const FinalItineraryScreen()),
+                            );
+                          },
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -404,37 +414,5 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
 
 
 
-  Widget _buildAIGenerationStep() {
-    return _buildStepContainer(
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(26),
-          color: Colors.white.withValues(alpha: 0.08),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.auto_awesome_rounded, size: 60, color: Color(0xFF2DD4BF)),
-            SizedBox(height: 16),
-            Text(
-              'Cooking Your Plan... 🍳',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Kai is matching real-time spots, weather forecasts, and route optimizations for your squad.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.white70),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 }
