@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/kai_mascot.dart';
 import '../widgets/kai_bubble.dart';
+import 'xp_reward_screen.dart';
 
 /// Post-Trip Memory Recap Screen featuring open scrapbook layout, tilted polaroid frames,
 /// washi-tape strips, wax-seal stat badges, and photo-album Kai commentary.
@@ -29,6 +30,13 @@ class _MemoryRecapScreenState extends State<MemoryRecapScreen> {
     setState(() {
       _hasShared = true;
       _kaiSpeechText = "Sent! Now everyone gets to be jealous of us. As they should 💌";
+    });
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const XpRewardScreen()),
+        );
+      }
     });
   }
 
