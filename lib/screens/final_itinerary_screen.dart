@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/kai_mascot.dart';
 import '../widgets/kai_bubble.dart';
+import 'live_trip_screen.dart';
 
 class ItineraryStop {
   final String time;
@@ -72,6 +73,13 @@ class _FinalItineraryScreenState extends State<FinalItineraryScreen> {
     HapticFeedback.heavyImpact();
     setState(() {
       _kaiSpeechText = "YES. Okay go have fun. I'll be here refreshing for updates like a worried parent 📸";
+    });
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const LiveTripScreen()),
+        );
+      }
     });
   }
 

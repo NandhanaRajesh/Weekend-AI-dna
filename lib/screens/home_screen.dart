@@ -7,6 +7,7 @@ import '../widgets/hidden_gems.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'planner_flow_screen.dart';
 import 'group_voting_screen.dart';
+import 'memory_recap_screen.dart';
 
 /// Full interactive HomeScreen implementation with reactive Kai AI mascot,
 /// goofy speech reactions, tilted drag cards, and hidden gems.
@@ -79,6 +80,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     } else if (index == 2) {
                       Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => const GroupVotingScreen()),
+                      );
+                    } else if (index == 3) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const MemoryRecapScreen()),
                       );
                     } else {
                       setState(() => _currentTab = index);
