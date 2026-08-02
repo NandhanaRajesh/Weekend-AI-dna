@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
-enum KaiExpression { happy, winking, excited, thinking }
+enum KaiExpression { happy, winking, excited, thinking, clingy, celebrating, sad, sneaky, sleepy, worried }
 
 /// Animated vector Kai Mascot widget with expressive eyes, antenna sparkle,
 /// mischievous grin, waving arms, and squash-and-stretch micro-animations.
@@ -52,12 +52,27 @@ class _KaiMascotState extends State<KaiMascot>
         return Transform.scale(
           scaleX: stretchX,
           scaleY: squashY,
-          child: CustomPaint(
-            size: Size(widget.size, widget.size * 1.1),
-            painter: _KaiMascotPainter(
-              expression: widget.expression,
-              pulse: _idleController.value,
-              armWaveAngle: armWaveAngle,
+          child: Container(
+            width: widget.size,
+            height: widget.size * 1.1,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/app_icon.png',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return CustomPaint(
+                    size: Size(widget.size, widget.size * 1.1),
+                    painter: _KaiMascotPainter(
+                      expression: widget.expression,
+                      pulse: _idleController.value,
+                      armWaveAngle: armWaveAngle,
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         );
@@ -167,19 +182,27 @@ class _KaiMascotPainter extends CustomPainter {
     canvas.drawPath(rightArmPath, Paint()..color = const Color(0xFFFFB703));
     canvas.restore();
 
-    // 4. Expressive Eyes
+    // 4. Expressive Eyes & Emotions
     final eyePaint = Paint()..color = const Color(0xFF0F0E1A);
     final pupilPaint = Paint()..color = Colors.white;
 
     final leftEyeCenter = Offset(center.dx - radius * 0.32, center.dy - radius * 0.12);
     final rightEyeCenter = Offset(center.dx + radius * 0.32, center.dy - radius * 0.12);
 
-    // Left Eye (Big and open)
-    canvas.drawCircle(leftEyeCenter, 6.5, eyePaint);
-    canvas.drawCircle(leftEyeCenter + const Offset(-1.5, -1.5), 2.2, pupilPaint);
+    if (expression == KaiExpression.worried) {
+      // Worried: Wide static eyes with small pupils
+      canvas.drawCircle(leftEyeCenter, 8.0, eyePaint);
+      canvas.drawCircle(rightEyeCenter, 8.0, eyePaint);
+      canvas.drawCircle(leftEyeCenter, 2.5, pupilPaint);
+      canvas.drawCircle(rightEyeCenter, 2.5, pupilPaint);
 
-    // Right Eye (Winking arc if winking / excited)
-    if (expression == KaiExpression.winking || expression == KaiExpression.excited) {
+      // Open worried O mouth
+      canvas.drawCircle(center + const Offset(0, 10), 6.0, eyePaint);
+    } else if (expression == KaiExpression.winking || expression == KaiExpression.excited) {
+      // Winking arc
+      canvas.drawCircle(leftEyeCenter, 6.5, eyePaint);
+      canvas.drawCircle(leftEyeCenter + const Offset(-1.5, -1.5), 2.2, pupilPaint);
+
       final winkPath = Path()
         ..moveTo(rightEyeCenter.dx - 6, rightEyeCenter.dy + 1)
         ..quadraticBezierTo(
@@ -195,26 +218,30 @@ class _KaiMascotPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round;
       canvas.drawPath(winkPath, winkPaint);
     } else {
+      canvas.drawCircle(leftEyeCenter, 6.5, eyePaint);
+      canvas.drawCircle(leftEyeCenter + const Offset(-1.5, -1.5), 2.2, pupilPaint);
       canvas.drawCircle(rightEyeCenter, 6.5, eyePaint);
       canvas.drawCircle(rightEyeCenter + const Offset(-1.5, -1.5), 2.2, pupilPaint);
     }
 
-    // 5. Mischievous Lopsided Grin
-    final mouthPath = Path()
-      ..moveTo(center.dx - 10, center.dy + 10)
-      ..quadraticBezierTo(
-        center.dx + 2,
-        center.dy + 22,
-        center.dx + 12,
-        center.dy + 8,
-      );
+    if (expression != KaiExpression.worried) {
+      // 5. Mischievous Lopsided Grin
+      final mouthPath = Path()
+        ..moveTo(center.dx - 10, center.dy + 10)
+        ..quadraticBezierTo(
+          center.dx + 2,
+          center.dy + 22,
+          center.dx + 12,
+          center.dy + 8,
+        );
 
-    final mouthPaint = Paint()
-      ..color = const Color(0xFF0F0E1A)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.0
-      ..strokeCap = StrokeCap.round;
-    canvas.drawPath(mouthPath, mouthPaint);
+      final mouthPaint = Paint()
+        ..color = const Color(0xFF0F0E1A)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.0
+        ..strokeCap = StrokeCap.round;
+      canvas.drawPath(mouthPath, mouthPaint);
+    }
 
     // Cheerful Pink Cheeks
     final cheekPaint = Paint()..color = const Color(0xFFFF5252).withValues(alpha: 0.45);

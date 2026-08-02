@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../controllers/kai_controller.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/kai_mascot.dart';
 import '../widgets/kai_bubble.dart';
@@ -32,6 +33,12 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
 
   void _triggerEmergencyBeacon() {
     HapticFeedback.vibrate();
+    // Hard Rule 1: Emergency Mode overrides everything to Worried state (no jokes)
+    KaiController.instance.react(KaiTrigger.emergencyModeOpened);
+    setState(() {
+      _kaiSpeechText = KaiController.instance.currentSpeech;
+    });
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
