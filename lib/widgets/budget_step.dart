@@ -112,20 +112,10 @@ class _BudgetStepState extends State<BudgetStep> {
                   ),
                 ),
 
-                // Tick Marks Row
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      _TickText('₹0'),
-                      _TickText('₹500'),
-                      _TickText('₹1.5k'),
-                      _TickText('₹3k'),
-                      _TickText('₹5k+'),
-                    ],
-                  ),
-                ),
+                const SizedBox(height: 4),
+
+                // Mathematically Accurate Tick Marks Row & Lines
+                const _AccurateTickRow(),
               ],
             ),
           ),
@@ -180,19 +170,64 @@ class _BudgetStepState extends State<BudgetStep> {
   }
 }
 
-class _TickText extends StatelessWidget {
-  final String text;
-  const _TickText(this.text);
+class _AccurateTickRow extends StatelessWidget {
+  const _AccurateTickRow();
+
+  static const List<Map<String, dynamic>> ticks = [
+    {'label': '₹0', 'value': 0.0},
+    {'label': '₹500', 'value': 500.0},
+    {'label': '₹1.5k', 'value': 1500.0},
+    {'label': '₹3k', 'value': 3000.0},
+    {'label': '₹5k+', 'value': 5000.0},
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-        color: Colors.white.withValues(alpha: 0.6),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final totalWidth = constraints.maxWidth;
+        const margin = 16.0;
+        final trackWidth = totalWidth - (margin * 2);
+
+        return SizedBox(
+          height: 28,
+          child: Stack(
+            children: ticks.map((t) {
+              final val = t['value'] as double;
+              final fraction = val / 5000.0;
+              final posX = margin + (fraction * trackWidth);
+
+              return Positioned(
+                left: posX - 24,
+                width: 48,
+                top: 0,
+                child: Column(
+                  children: [
+                    Container(
+                      width: 2,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(1),
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      t['label'] as String,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 }
