@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/kai_mascot.dart';
 import '../widgets/kai_bubble.dart';
-import 'final_itinerary_screen.dart';
+import 'expense_prediction_screen.dart';
 
 class PlanOptionItem {
   final String id;
@@ -103,8 +103,8 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
 
   void _confirmChoice() {
     HapticFeedback.heavyImpact();
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const FinalItineraryScreen()),
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ExpensePredictionScreen()),
     );
   }
 
