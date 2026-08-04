@@ -13,7 +13,7 @@ import '../widgets/food_step.dart';
 import '../widgets/weather_step.dart';
 import '../widgets/ai_thinking_step.dart';
 import 'home_screen.dart';
-import 'final_itinerary_screen.dart';
+import 'recommendations_screen.dart';
 
 /// 9-Step Weekend Planning Flow Screen featuring PageView deck transitions,
 /// progress dots, Kai speech commentary, and interactive mood check tiles.
@@ -308,7 +308,7 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
                         child: AiThinkingStep(
                           onComplete: () {
                             Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(builder: (_) => const FinalItineraryScreen()),
+                              MaterialPageRoute(builder: (_) => const RecommendationsScreen()),
                             );
                           },
                         ),
