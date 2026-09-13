@@ -8,6 +8,8 @@ import '../widgets/bottom_nav_bar.dart';
 import 'planner_flow_screen.dart';
 import 'memory_recap_screen.dart';
 import 'public_trips_screen.dart';
+import 'auth_screen.dart';
+import '../services/auth_service.dart';
 
 /// Full interactive HomeScreen implementation with reactive Kai AI mascot,
 /// goofy speech reactions, tilted drag cards, and hidden gems.
@@ -21,6 +23,48 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentTab = 0;
   String _kaiSpeechText = "TA-DA. Three weekends, all designed by yours truly. Try not to cry 🪄";
+
+  Future<void> _showProfileMenu() async {
+    final email = AuthService.currentUser?.email ?? 'Signed-in account';
+    final shouldSignOut = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: const Color(0xFF161426),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Your profile',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 8),
+              Text(email, style: TextStyle(color: Colors.white.withValues(alpha: 0.7))),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  icon: const Icon(Icons.logout_rounded),
+                  label: const Text('Log out'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (shouldSignOut != true || !mounted) return;
+    await AuthService.signOut();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const AuthScreen()),
+      (_) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +129,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => const MemoryRecapScreen()),
                       );
+                    } else if (index == 4) {
+                      _showProfileMenu();
                     } else {
                       setState(() => _currentTab = index);
                     }

@@ -1,10 +1,12 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/kai_mascot.dart';
 import '../widgets/kai_bubble.dart';
 import 'kai_welcome_screen.dart';
+import '../services/auth_service.dart';
 
 /// Sign Up & Login Screen with social buttons, email inputs, and Kai mascot peeking header.
 class AuthScreen extends StatefulWidget {
@@ -15,21 +17,96 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isLoginMode = true;
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _proceedToWelcome() {
-    HapticFeedback.mediumImpact();
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const KaiWelcomeScreen()),
-    );
+  Future<void> _handleEmailAuth() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final displayName = _nameController.text.trim();
+
+    if ((!_isLoginMode && displayName.isEmpty) || email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isLoginMode
+                ? 'Please enter your email and password.'
+                : 'Please enter your name, email, and password.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    try {
+      if (_isLoginMode) {
+        // LOGIN
+        final response = await AuthService.signIn(
+          email: email,
+          password: password,
+        );
+
+        if (response.user != null) {
+          if (displayName.isNotEmpty) {
+            try {
+              await AuthService.updateDisplayName(displayName);
+            } catch (_) {
+              // Profile persistence must not prevent a valid login.
+            }
+          }
+          HapticFeedback.mediumImpact();
+
+          if (!mounted) return;
+
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const KaiWelcomeScreen()),
+          );
+        }
+      } else {
+        // SIGN UP
+        final response = await AuthService.signUp(
+          email: email,
+          password: password,
+          displayName: displayName,
+        );
+
+        if (response.user != null) {
+          HapticFeedback.mediumImpact();
+
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Account created successfully!')),
+          );
+
+          setState(() {
+            _isLoginMode = true;
+          });
+        }
+      }
+    } on AuthException catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Something went wrong: $error')));
+    }
   }
 
   @override
@@ -55,7 +132,8 @@ class _AuthScreenState extends State<AuthScreen> {
                       SizedBox(width: 8),
                       Expanded(
                         child: KaiBubble(
-                          text: "Let's get you in — I promise this is the boring part 😴",
+                          text:
+                              "Let's get you in — I promise this is the boring part 😴",
                         ),
                       ),
                     ],
@@ -88,8 +166,10 @@ class _AuthScreenState extends State<AuthScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Create Account',
+                            Text(
+                              _isLoginMode
+                                  ? 'Welcome Back!'
+                                  : 'Create Your Account',
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.w900,
@@ -99,20 +179,21 @@ class _AuthScreenState extends State<AuthScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Join 50k+ weekenders planning with Kai.',
+                              _isLoginMode
+                                  ? 'Log in to continue your weekend planning journey.'
+                                  : 'Sign up to start planning your perfect weekend with me!',
                               style: TextStyle(
-                                fontSize: 13.5,
+                                fontSize: 14,
                                 color: Colors.white.withValues(alpha: 0.7),
                               ),
                             ),
-
                             const SizedBox(height: 20),
 
                             // Google Button
                             _SocialAuthButton(
                               icon: Icons.g_mobiledata_rounded,
                               label: 'Continue with Google',
-                              onTap: _proceedToWelcome,
+                              onTap: _handleEmailAuth,
                             ),
 
                             const SizedBox(height: 10),
@@ -121,7 +202,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             _SocialAuthButton(
                               icon: Icons.apple_rounded,
                               label: 'Continue with Apple',
-                              onTap: _proceedToWelcome,
+                              onTap: _handleEmailAuth,
                             ),
 
                             const SizedBox(height: 20),
@@ -129,25 +210,48 @@ class _AuthScreenState extends State<AuthScreen> {
                             // OR Divider
                             Row(
                               children: [
-                                Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.2))),
+                                Expanded(
+                                  child: Divider(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                  ),
+                                ),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
                                   child: Text(
                                     'OR',
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
-                                      color: Colors.white.withValues(alpha: 0.5),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.5,
+                                      ),
                                     ),
                                   ),
                                 ),
-                                Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.2))),
+                                Expanded(
+                                  child: Divider(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                  ),
+                                ),
                               ],
                             ),
 
                             const SizedBox(height: 20),
 
-                            // Email Field
+                            // Name Field
+                            _AuthTextField(
+                              controller: _nameController,
+                              hintText: _isLoginMode
+                                  ? 'Your name (optional)'
+                                  : 'Your name',
+                              icon: Icons.person_rounded,
+                              textCapitalization: TextCapitalization.words,
+                            ),
+
+                            const SizedBox(height: 12),
+
                             _AuthTextField(
                               controller: _emailController,
                               hintText: 'alex@example.com',
@@ -169,7 +273,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
                             // Continue Button
                             ElevatedButton(
-                              onPressed: _proceedToWelcome,
+                              onPressed: _handleEmailAuth,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.transparent,
                                 padding: EdgeInsets.zero,
@@ -183,7 +287,10 @@ class _AuthScreenState extends State<AuthScreen> {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(30),
                                   gradient: const LinearGradient(
-                                    colors: [Color(0xFFFF7A59), Color(0xFF8B5CF6)],
+                                    colors: [
+                                      Color(0xFFFF7A59),
+                                      Color(0xFF8B5CF6),
+                                    ],
                                   ),
                                   boxShadow: const [
                                     BoxShadow(
@@ -193,10 +300,12 @@ class _AuthScreenState extends State<AuthScreen> {
                                     ),
                                   ],
                                 ),
-                                child: const Center(
+                                child: Center(
                                   child: Text(
-                                    'Continue ➔',
-                                    style: TextStyle(
+                                    _isLoginMode
+                                        ? 'Log In ➔'
+                                        : 'Create Account ➔',
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w800,
                                       color: Colors.white,
@@ -215,15 +324,24 @@ class _AuthScreenState extends State<AuthScreen> {
 
                   // Bottom Log In Link
                   TextButton(
-                    onPressed: _proceedToWelcome,
+                    onPressed: () {
+                      setState(() {
+                        _isLoginMode = !_isLoginMode;
+                      });
+                    },
                     child: RichText(
                       text: TextSpan(
-                        text: 'Already have an account? ',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13.5),
-                        children: const [
+                        text: _isLoginMode
+                            ? 'Don\'t have an account? '
+                            : 'Already have an account? ',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: 13.5,
+                        ),
+                        children: [
                           TextSpan(
-                            text: 'Log in',
-                            style: TextStyle(
+                            text: _isLoginMode ? 'Sign up' : 'Log in',
+                            style: const TextStyle(
                               color: Color(0xFFFF7A59),
                               fontWeight: FontWeight.w800,
                             ),
@@ -291,6 +409,7 @@ class _AuthTextField extends StatelessWidget {
   final IconData icon;
   final bool obscureText;
   final TextInputType keyboardType;
+  final TextCapitalization textCapitalization;
 
   const _AuthTextField({
     required this.controller,
@@ -298,6 +417,7 @@ class _AuthTextField extends StatelessWidget {
     required this.icon,
     this.obscureText = false,
     this.keyboardType = TextInputType.text,
+    this.textCapitalization = TextCapitalization.none,
   });
 
   @override
@@ -306,14 +426,25 @@ class _AuthTextField extends StatelessWidget {
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
+      textCapitalization: textCapitalization,
       style: const TextStyle(color: Colors.white, fontSize: 14),
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: Colors.white.withValues(alpha: 0.6), size: 20),
+        prefixIcon: Icon(
+          icon,
+          color: Colors.white.withValues(alpha: 0.6),
+          size: 20,
+        ),
         hintText: hintText,
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 14),
+        hintStyle: TextStyle(
+          color: Colors.white.withValues(alpha: 0.4),
+          fontSize: 14,
+        ),
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.06),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),

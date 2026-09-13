@@ -2,16 +2,24 @@
 
 A new Flutter project.
 
-## Getting Started
+# WeekendAI
 
-This project is a starting point for a Flutter application.
+## Supabase backend
 
-A few resources to get you started if this is your first Flutter project:
+The app uses Supabase Auth and Postgres. Apply the migration in
+`supabase/migrations/20260910000000_backend_foundation.sql` to the project
+configured in `lib/config/supabase_config.dart` using the Supabase Dashboard SQL
+Editor or the Supabase CLI:
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```bash
+supabase db push
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The migration creates protected profile, preference, authentication history,
+trip, and trip expense tables. It also creates a profile and sign-up history
+row when a Supabase Auth user is created, enables row-level security, and keeps
+each trip's `estimated_total` equal to the sum of its expense rows.
+
+Email/password sessions are restored automatically on app launch. Do not call
+`auth.signOut()` during startup. Configure email confirmation and redirect URLs
+in Supabase Auth settings before testing sign-up on a device.

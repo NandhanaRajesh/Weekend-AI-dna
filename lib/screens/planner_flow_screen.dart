@@ -14,6 +14,8 @@ import '../widgets/weather_step.dart';
 import '../widgets/ai_thinking_step.dart';
 import 'home_screen.dart';
 import 'recommendations_screen.dart';
+import '../services/preference_service.dart';
+import '../services/trip_service.dart';
 
 /// 9-Step Weekend Planning Flow Screen featuring PageView deck transitions,
 /// progress dots, Kai speech commentary, and interactive mood check tiles.
@@ -29,13 +31,19 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
   int _currentStep = 0;
 
   // Selected State
+  // Selected State
   String? _selectedMood = 'adventurous';
   String _selectedSquad = 'Squad (3-4)';
-  String _selectedBudget = 'Moderate (\$\$)';
-  String _selectedDistance = 'Short Drive (15-30m)';
+  int _selectedBudget = 1500;
+  int _selectedDistance = 15;
+  String _selectedTransport = 'car';
+  Set<String> _selectedActivities = {'creative', 'adventure', 'food'};
+  String _selectedFood = 'cafe';
+  String _selectedDietary = 'No Preference 😋';
 
   // Kai Speech Commentary per Step
-  String _kaiSpeechText = "How's your energy today? Be honest, I won't judge 👀";
+  String _kaiSpeechText =
+      "How's your energy today? Be honest, I won't judge 👀";
 
   static const int totalSteps = 9;
 
@@ -43,6 +51,55 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
   void initState() {
     super.initState();
     _pageController = PageController();
+    Future<void> loadPreferences() async {
+      try {
+        final preferences = await PreferenceService.getPreferences();
+
+        if (preferences == null) {
+          debugPrint('No saved preferences found.');
+          return;
+        }
+
+        if (!mounted) return;
+
+        setState(() {
+          _selectedBudget =
+              (preferences['budget'] as num?)?.toInt() ?? _selectedBudget;
+
+          _selectedDistance =
+              (preferences['travel_distance'] as num?)?.toInt() ??
+              _selectedDistance;
+
+          _selectedTransport =
+              preferences['transport']?.toString() ?? _selectedTransport;
+
+          final foodPreferences = preferences['food_preferences']?.toString();
+
+          if (foodPreferences != null && foodPreferences.isNotEmpty) {
+            final parts = foodPreferences.split(', ');
+
+            _selectedFood = parts.isNotEmpty ? parts[0] : _selectedFood;
+            _selectedDietary = parts.length > 1
+                ? parts.sublist(1).join(', ')
+                : _selectedDietary;
+          }
+
+          final activities = preferences['activity'];
+
+          if (activities is List) {
+            _selectedActivities = activities
+                .map((activity) => activity.toString())
+                .toSet();
+          }
+        });
+
+        debugPrint('Preferences loaded: $preferences');
+      } catch (error) {
+        debugPrint('Error loading preferences: $error');
+      }
+    }
+
+    loadPreferences();
   }
 
   @override
@@ -51,14 +108,43 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
     super.dispose();
   }
 
-  void _nextStep() {
+  Future<void> _savePreferences() async {
+    try {
+      await PreferenceService.savePreferences(
+        budget: _selectedBudget,
+        travelDistance: _selectedDistance,
+        transport: _selectedTransport,
+        foodPreferences: '$_selectedFood, $_selectedDietary',
+        activities: _selectedActivities.toList(),
+        mood: _selectedMood,
+        squad: _selectedSquad,
+      );
+
+      await TripService.savePlannerTrip(
+        budget: _selectedBudget,
+        travelDistanceKm: _selectedDistance.toDouble(),
+        transport: _selectedTransport,
+        mood: _selectedMood ?? 'adventurous',
+        squad: _selectedSquad,
+        activities: _selectedActivities.toList(),
+        foodPreferences: '$_selectedFood, $_selectedDietary',
+      );
+
+      debugPrint('Preferences saved successfully!');
+    } catch (error) {
+      debugPrint('Error saving preferences: $error');
+    }
+  }
+
+  Future<void> _nextStep() async {
     HapticFeedback.mediumImpact();
 
     // Auto-skip Weather step (Step 7 -> 8) with Kai commentary if reaching weather
     if (_currentStep == 6) {
       // Step 7: Food -> Step 8: Weather (Auto-skipped to Step 9)
       setState(() {
-        _kaiSpeechText = "Already checked the weather — 72°F and sunny, no umbrella needed ☀️ skipping right to AI itinerary!";
+        _kaiSpeechText =
+            "Already checked the weather — 72°F and sunny, no umbrella needed ☀️ skipping right to AI itinerary!";
       });
       _pageController.animateToPage(
         8,
@@ -74,10 +160,14 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
         curve: Curves.easeOutCubic,
       );
     } else {
-      // Complete flow -> Navigate back to Home
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
+      // Complete flow -> Save preferences and navigate back to Home
+      await _savePreferences();
+
+      if (!mounted) return;
+
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
     }
   }
 
@@ -105,19 +195,29 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
               children: [
                 // Top App Bar Navigation Row
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
                         onPressed: _previousStep,
-                        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                         style: IconButton.styleFrom(
                           backgroundColor: Colors.white.withValues(alpha: 0.1),
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
                           color: Colors.white.withValues(alpha: 0.12),
@@ -138,15 +238,19 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
 
                 // Peeking Kai Mascot Header & Reactive Speech Bubble
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const KaiMascot(size: 58, expression: KaiExpression.happy),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: KaiBubble(text: _kaiSpeechText),
+                      const KaiMascot(
+                        size: 58,
+                        expression: KaiExpression.happy,
                       ),
+                      const SizedBox(width: 10),
+                      Expanded(child: KaiBubble(text: _kaiSpeechText)),
                     ],
                   ),
                 ),
@@ -182,7 +286,9 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
                       _buildStepContainer(
                         child: SingleChildScrollView(
                           child: FriendsStep(
-                            selectedMode: _selectedSquad == 'friends' ? 'friends' : 'solo',
+                            selectedMode: _selectedSquad == 'friends'
+                                ? 'friends'
+                                : 'solo',
                             onModeChanged: (mode) {
                               setState(() {
                                 _selectedSquad = mode;
@@ -199,10 +305,10 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
                       _buildStepContainer(
                         child: SingleChildScrollView(
                           child: BudgetStep(
-                            currentBudget: 1500,
+                            currentBudget: _selectedBudget.toDouble(),
                             onBudgetChanged: (val) {
                               setState(() {
-                                _selectedBudget = '₹${val.toInt()}';
+                                _selectedBudget = val.toInt();
                               });
                               debugPrint('Budget updated: $_selectedBudget');
                             },
@@ -214,17 +320,18 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
                           ),
                         ),
                       ),
-
                       // Step 4: Distance
                       _buildStepContainer(
                         child: SingleChildScrollView(
                           child: DistanceStep(
-                            currentDistance: 15,
+                            currentDistance: _selectedDistance.toDouble(),
                             onDistanceChanged: (val) {
                               setState(() {
-                                _selectedDistance = '${val.toInt()} km';
+                                _selectedDistance = val.toInt();
                               });
-                              debugPrint('Distance updated: $_selectedDistance');
+                              debugPrint(
+                                'Distance updated: $_selectedDistance',
+                              );
                             },
                             onKaiReactionChanged: (reaction) {
                               setState(() {
@@ -239,9 +346,14 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
                       _buildStepContainer(
                         child: SingleChildScrollView(
                           child: TransportStep(
-                            selectedTransport: 'car',
+                            selectedTransport: _selectedTransport,
                             onTransportChanged: (val) {
-                              debugPrint('Transport selected: $val');
+                              setState(() {
+                                _selectedTransport = val;
+                              });
+                              debugPrint(
+                                'Transport selected: $_selectedTransport',
+                              );
                             },
                             onKaiReactionChanged: (reaction) {
                               setState(() {
@@ -256,9 +368,14 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
                       _buildStepContainer(
                         child: SingleChildScrollView(
                           child: ActivitiesStep(
-                            selectedActivities: const {'creative', 'adventure', 'food'},
+                            selectedActivities: _selectedActivities,
                             onActivitiesChanged: (selected) {
-                              debugPrint('Activities selected: $selected');
+                              setState(() {
+                                _selectedActivities = selected;
+                              });
+                              debugPrint(
+                                'Activities selected: $_selectedActivities',
+                              );
                             },
                             onKaiReactionChanged: (reaction) {
                               setState(() {
@@ -273,13 +390,19 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
                       _buildStepContainer(
                         child: SingleChildScrollView(
                           child: FoodStep(
-                            selectedFoodId: 'cafe',
-                            selectedDietary: 'No Preference 😋',
+                            selectedFoodId: _selectedFood,
+                            selectedDietary: _selectedDietary,
                             onFoodChanged: (val) {
-                              debugPrint('Food selected: $val');
+                              setState(() {
+                                _selectedFood = val;
+                              });
+                              debugPrint('Food selected: $_selectedFood');
                             },
                             onDietaryChanged: (diet) {
-                              debugPrint('Dietary selected: $diet');
+                              setState(() {
+                                _selectedDietary = diet;
+                              });
+                              debugPrint('Dietary selected: $_selectedDietary');
                             },
                             onKaiReactionChanged: (reaction) {
                               setState(() {
@@ -308,7 +431,9 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
                         child: AiThinkingStep(
                           onComplete: () {
                             Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(builder: (_) => const RecommendationsScreen()),
+                              MaterialPageRoute(
+                                builder: (_) => const RecommendationsScreen(),
+                              ),
                             );
                           },
                         ),
@@ -339,8 +464,8 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
                               color: isSelected
                                   ? const Color(0xFFFF7A59)
                                   : (isPassed
-                                      ? const Color(0xFF2DD4BF)
-                                      : Colors.white.withValues(alpha: 0.2)),
+                                        ? const Color(0xFF2DD4BF)
+                                        : Colors.white.withValues(alpha: 0.2)),
                             ),
                           );
                         }),
@@ -364,10 +489,7 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(30),
                             gradient: const LinearGradient(
-                              colors: [
-                                Color(0xFFFF7A59),
-                                Color(0xFF8B5CF6),
-                              ],
+                              colors: [Color(0xFFFF7A59), Color(0xFF8B5CF6)],
                             ),
                             boxShadow: const [
                               BoxShadow(
@@ -382,7 +504,9 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  _currentStep == totalSteps - 1 ? 'View My Itinerary 🚀' : 'Next Step ➔',
+                                  _currentStep == totalSteps - 1
+                                      ? 'View My Itinerary 🚀'
+                                      : 'Next Step ➔',
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w800,
@@ -411,8 +535,4 @@ class _PlannerFlowScreenState extends State<PlannerFlowScreen> {
       child: child,
     );
   }
-
-
-
-
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/floating_icons.dart';
 import '../widgets/logo_widget.dart';
 import '../widgets/kai_bubble.dart';
 import '../widgets/progress_line.dart';
-import 'onboarding_carousel_screen.dart';
+import 'auth_screen.dart';
+import 'home_screen.dart';
 
 /// Premium Animated Splash Screen orchestrating all timeline staggered animations
 /// and smooth page transition to OnboardingScreen.
@@ -94,7 +96,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     _timelineController.addStatusListener((status) {
       if (status == AnimationStatus.completed && !_isNavigating) {
-        _navigateToOnboarding();
+        _navigateAfterSplash();
       }
     });
 
@@ -102,44 +104,49 @@ class _SplashScreenState extends State<SplashScreen>
     _timelineController.forward();
   }
 
-  void _navigateToOnboarding() {
-    _isNavigating = true;
+ void _navigateAfterSplash() {
+  _isNavigating = true;
 
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 900),
-        reverseTransitionDuration: const Duration(milliseconds: 600),
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return const OnboardingCarouselScreen();
-        },
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // Smooth upward floating transition combined with cross-fade
-          final slideUp = Tween<Offset>(
-            begin: const Offset(0.0, 0.06),
-            end: Offset.zero,
-          ).animate(
-            CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            ),
-          );
+  final session = Supabase.instance.client.auth.currentSession;
 
-          final fade = CurvedAnimation(
+  final destination = session != null
+      ? const HomeScreen()
+      : const AuthScreen();
+
+  Navigator.of(context).pushReplacement(
+    PageRouteBuilder(
+      transitionDuration: const Duration(milliseconds: 900),
+      reverseTransitionDuration: const Duration(milliseconds: 600),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return destination;
+      },
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final slideUp = Tween<Offset>(
+          begin: const Offset(0.0, 0.06),
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(
             parent: animation,
-            curve: Curves.easeIn,
-          );
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
-          return SlideTransition(
-            position: slideUp,
-            child: FadeTransition(
-              opacity: fade,
-              child: child,
-            ),
-          );
-        },
-      ),
-    );
-  }
+        final fade = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeIn,
+        );
+
+        return SlideTransition(
+          position: slideUp,
+          child: FadeTransition(
+            opacity: fade,
+            child: child,
+          ),
+        );
+      },
+    ),
+  );
+}
 
   @override
   void dispose() {
